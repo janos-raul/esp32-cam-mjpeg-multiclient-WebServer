@@ -191,3 +191,16 @@ esp_err_t OV2640::init(camera_config_t config)
 
     return ESP_OK;
 }
+
+esp_err_t OV2640::deinit() {
+
+  esp_err_t err = esp_camera_deinit();
+
+  if (err != ESP_OK) {
+    printf("Camera deinit failed with error 0x%x", err);
+    return err;
+  }
+  // ESP_ERROR_CHECK(gpio_install_isr_service(0));
+
+  return ESP_OK;
+}
