@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32-CAM Settings</title>
+    <link rel="stylesheet" type="text/css" href="cam_styles.css">
+</head>
+<body>
+    <div class="settings">
+        <h1>Camera Settings</h1>
+        <div>
+            <label for="quality">Quality:</label>
+            <select id="quality">
+                <option value="30">Low</option>
+                <option value="25">Medium</option>
+		<option value="20">Standard</option>
+                <option value="15">High</option>
+                <option value="10">Highest</option>
+            </select>
+        </div>
+<div>
+    <label for="fps">Frame Rate (FPS):</label>
+    <input type="number" id="fps" min="2" max="24" value="14">
+</div>
+        <div>
+            <label for="brightness">Brightness:</label>
+            <input type="number" id="brightness" min="-2" max="2" value="0">
+        </div>
+        <div>
+            <label for="contrast">Contrast:</label>
+            <input type="number" id="contrast" min="-2" max="2" value="0">
+        </div>
+        <div>
+            <label for="saturation">Saturation:</label>
+            <input type="number" id="saturation" min="-2" max="2" value="0">
+        </div>
+        <div>
+            <label for="resolution">Resolution:</label>
+            <select id="resolution">
+                <option value="QVGA">QVGA&emsp;320x240</option>
+		<option value="VGA">VGA&emsp;640x480</option>
+                <option value="SVGA">SVGA&emsp;800x600</option>
+                <option value="XGA">XGA&emsp;1024x768</option>
+                <option value="SXGA">SXGA&emsp;1280x1024</option>
+                <option value="UXGA">UXGA&emsp;1600x1200</option>
+            </select>
+        </div>
+        <div>
+            <label for="specialEffect">Special Effect:</label>
+            <select id="specialEffect">
+                <option value="0">No Effect</option>
+                <option value="1">Negative</option>
+                <option value="2">Grayscale</option>
+                <option value="3">Red Tint</option>
+                <option value="4">Green Tint</option>
+                <option value="5">Blue Tint</option>
+                <option value="6">Sepia</option>
+            </select>
+        </div>
+	<div>
+    	    <label for="whiteBalance">AWB:</label>
+    	    <select id="whiteBalance">
+        	<option value="1">Enabled</option>
+       	 	<option value="0">Disabled</option>
+   	    </select>
+	</div>
+<div>
+    <label for="awbGain">AWB Gain:</label>
+    <select id="awbGain">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="wbMode">AWB Mode:</label>
+    <select id="wbMode">
+        <option value="0">Auto</option>
+        <option value="1">Sunny</option>
+        <option value="2">Cloudy</option>
+        <option value="3">Office</option>
+        <option value="4">Home</option>
+    </select>
+</div>
+<div>
+    <label for="hmirror">Horizontal Mirror:</label>
+    <select id="hmirror">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="vflip">Vertical Flip:</label>
+    <select id="vflip">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="colorbar">Color Bar:</label>
+    <select id="colorbar">
+	<option value="0">Disabled</option>
+        <option value="1">Enabled</option>
+    </select>
+</div>
+<div>
+    <label for="gammaCorrection">RAW Gamma:</label>
+    <select id="gammaCorrection">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="exposureControl">AExposure Control:</label>
+    <select id="exposureControl">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="aec2">AExposure Dsp:</label>
+    <select id="aec2">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="aeLevel">AExposure Level:</label>
+    <input type="number" id="aeLevel" min="-2" max="2" value="0">
+</div>
+<div>
+    <label for="aecValue">AExposure Value:</label>
+    <input type="number" id="aecValue" min="0" max="1200" value="600">
+</div>
+<div>
+    <label for="gainControl">Auto Gain Control:</label>
+    <select id="gainControl">
+        <option value="1">Enabled</option>
+        <option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="agcGain">AGC Gain:</label>
+    <input type="number" id="agcGain" min="0" max="30" value="15">
+</div>
+<div>
+    <label for="dcw">JPG Downsize Mode:</label>
+    <select id="dcw">
+	<option value="1">Enabled</option>
+	<option value="0">Disabled</option>
+    </select>
+</div>
+<div>
+    <label for="led">Flash:</label>
+    <select id="led">
+	<option value="0">Off</option>
+	<option value="1">On</option>
+    </select>
+</div>
+        <div class="button-row">
+            <button id="toggleStreamButton">Start Video Stream</button>
+            <button id="getJpgButton">Save Picture</button>
+        </div>
+        <div class="button-row">
+            <button id="saveSettingsButton">Save Settings</button>
+    	    <button id="resetDefaultsButton">Load Default Settings</button>
+        </div>
+    </div>
+    <div class="stream" id="streamContainer">
+        <iframe id="videoStream"></iframe>
+    </div>
+    <div id="infoBar" class="info-bar"></div>
+    <script src="cam_script.js"></script>
+</body>
+</html>

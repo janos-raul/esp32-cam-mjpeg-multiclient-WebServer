@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Settings</title>
+    <link rel="stylesheet" type="text/css" href="wifi_styles.css">
+</head>
+<body>
+    <h1>Wi-Fi Settings</h1>
+    <div>
+        <label for="ssid">SSID:</label>
+        <input type="text" id="ssid">
+    </div>
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password">
+    </div>
+    <div>
+        <label for="hostname">Host Name:</label>
+        <input type="text" id="hostname">
+    </div>
+    <div class="button-row">
+        <button id="saveButton">Save Settings</button>
+        <button id="rebootButton">Reboot</button>
+        <button id="rebootApButton">Reboot into AP Mode</button>
+    </div>
+    <div id="apInfo" style="display: none;">
+        <h2>Access Point Mode</h2>
+        <p>SSID: ESP32CAM-AP</p>
+        <p>Password: 12345678</p>
+        <p>Host Name: esp32cam</p>
+        <p>Connect to the network and open a browser to <a href="http://192.168.0.1">http://192.168.0.1</a> to configure the Wi-Fi settings.</p>
+    </div>
+    <script src="wifi_script.js"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+body {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 100vh;
+    background-color: #000000;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+.settings {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background-color: #333;
+    padding: 2px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-right: 5px;
+}
+h1 {
+    color: #fff;
+	font-size: 16px;
+}
+label {
+    margin: 2px;
+    font-size: 14px;
+    color: #fff;
+}
+input, select {
+    margin: 2px;
+    padding: 2px;
+    font-size: 12px;
+    width: 120px;
+    box-sizing: border-box;
+}
+.button-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    width: 100%;
+}
+button {
+    margin: 2px;
+    padding: 5px 10px;
+    font-size: 14px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+button:hover {
+    background-color: #0056b3;
+}
+.stream {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000000;
+    border-radius: 10px;
+    padding: 10px;
+}
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+.info-bar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    font-size: 14px;
+    display: none; /* Initially hidden */
+}
+button:disabled {
+    background-color: #ccc; /* Light gray background */
+    color: #666; /* Darker gray text */
+    cursor: not-allowed; /* Show 'not allowed' cursor */
+    opacity: 0.6; /* Slightly faded */
+}
