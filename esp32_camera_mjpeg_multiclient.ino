@@ -36,6 +36,17 @@
 // ESP32 has two cores: APPlication core and PROcess core (the one that runs ESP32 SDK stack)
 #define APP_CPU 1
 #define PRO_CPU 0
+// Select camera model
+//#define CAMERA_MODEL_WROVER_KIT
+//#define CAMERA_MODEL_ESP_EYE
+//#define CAMERA_MODEL_M5STACK_PSRAM
+//#define CAMERA_MODEL_M5STACK_WIDE
+#define CAMERA_MODEL_AI_THINKER
+#define FLASH_PIN 4           // Define the GPIO pin for the flash LED
+#define LED_PIN 33            // Define the GPIO pin for the internal LED
+#define RED_LED_PIN 2         // Define the GPIO pin for the external RED LED
+#define BUTTON_PIN_INPUT 13   // GPIO 13
+#define BUTTON_PIN_OUTPUT 14  // GPIO 14
 
 #include "src/OV2640.h"
 #include <WiFi.h>
@@ -46,20 +57,7 @@
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
 #include <SimpleFTPServer.h>
-
-// Select camera model
-//#define CAMERA_MODEL_WROVER_KIT
-//#define CAMERA_MODEL_ESP_EYE
-//#define CAMERA_MODEL_M5STACK_PSRAM
-//#define CAMERA_MODEL_M5STACK_WIDE
-#define CAMERA_MODEL_AI_THINKER
 #include "camera_pins.h"
-
-#define FLASH_PIN 4           // Define the GPIO pin for the flash LED
-#define LED_PIN 33            // Define the GPIO pin for the internal LED
-#define RED_LED_PIN 2         // Define the GPIO pin for the external RED LED
-#define BUTTON_PIN_INPUT 13   // GPIO 13
-#define BUTTON_PIN_OUTPUT 14  // GPIO 14
 
 unsigned long lastTime = 0;
 unsigned long timerDelay = 50;
@@ -625,7 +623,7 @@ void setup() {
   //  config.frame_size = FRAMESIZE_QVGA;
   config.frame_size = FRAMESIZE_UXGA;
   config.jpeg_quality = 20;
-  config.fb_count = 2;
+  config.fb_count = 1;
 
   if (cam.init(config) != ESP_OK) {
     Serial.println("Error initializing the camera");
