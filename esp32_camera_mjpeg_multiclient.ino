@@ -29,7 +29,7 @@
 # used the board flash on gpio 4
 # used the board led on gpio 33
 # added external led on gpio 2
-# added a button to enter AP mode and configure Wifi credentials wich are then saved to SPIFFS and loaded on boot along with camera settings
+# added a button to enter AP mode and configure Wifi credentials which are then saved to SPIFFS and loaded on boot along with camera settings
             (button is connected to gpio 13 and 14)
 */
 
