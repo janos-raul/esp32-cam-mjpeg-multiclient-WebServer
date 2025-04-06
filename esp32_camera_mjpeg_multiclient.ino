@@ -26,6 +26,7 @@
 # some performance tweaks
 # use of external wifi antena is highly recommended for the esp32cam board
 # set "Events Run On: core 0" and "Arduino Run On: core 0"
+# set "Erase All Flash Before Sketch Upload: Disabled" to prevent SPIFFS deletion
 # used the board flash on gpio 4
 # used the board led on gpio 33
 # added external led on gpio 2
@@ -97,7 +98,7 @@ void handleCameraSettings() {
   }
 
   String body = server.arg("plain");
-  StaticJsonDocument<200> doc;
+  DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, body);
 
   if (error) {
@@ -176,7 +177,7 @@ void handleCameraSettings() {
 // Apply settings on reboot
 void applySettings(const String& settings) {
   // Parse the settings and apply them to the camera
-  StaticJsonDocument<200> doc;
+  DynamicJsonDocument doc(1024);
   DeserializationError error = deserializeJson(doc, settings);
 
   if (error) {
@@ -895,6 +896,12 @@ void ota_setup() {
   ArduinoOTA.setHostname("ESPCAM_OTA");
   ArduinoOTA.setPassword("OTA-pasw");  // Set a strong password for OTA updates
   ArduinoOTA.onStart([]() {
+        // Deinitialize camera
+    if (cam.deinit() != ESP_OK) {
+      Serial.println("Error deinitializing the camera!");
+    }else {
+      Serial.println("Deinitializing the camera!");
+    }
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
