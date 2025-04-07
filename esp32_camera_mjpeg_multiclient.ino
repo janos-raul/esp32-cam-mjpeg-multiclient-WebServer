@@ -709,6 +709,14 @@ void loop() {
     digitalWrite(RED_LED_PIN, LOW);
   }
 
+  button_check();      // Check for button press and if pressed reboot into  AP mode
+  ArduinoOTA.handle();  // Check for OTA updates
+  ftpSrv.handleFTP();
+  taskYIELD();
+  vTaskDelay(pdMS_TO_TICKS(1));
+}
+
+void button_check() {
   if (buttonPressed) {
     buttonPressed = false;  // Clear the flag
     File file = SPIFFS.open("/ap_mode.flag", FILE_WRITE);
@@ -720,11 +728,6 @@ void loop() {
     delay(1000);
     ESP.restart();
   }
-
-  ArduinoOTA.handle();  // Check for OTA updates
-  ftpSrv.handleFTP();
-  taskYIELD();
-  vTaskDelay(pdMS_TO_TICKS(1));
 }
 
 void setupAPMode() {
@@ -827,9 +830,11 @@ void wifi_Connect() {
   WiFi.setHostname(hostname.c_str());
   WiFi.begin(ssid.c_str(), password.c_str());
   Serial.print("Connecting to WiFi");
+  buttonPressed = false;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(F("."));
+    button_check();
   }
   ip = WiFi.localIP();
   Serial.println(F("WiFi connected"));
@@ -893,7 +898,7 @@ void load_wifi_Settings() {
 
 // OTA setup
 void ota_setup() {
-  ArduinoOTA.setHostname("ESPCAM_OTA");
+  ArduinoOTA.setHostname(hostname.c_str());
   ArduinoOTA.setPassword("OTA-pasw");  // Set a strong password for OTA updates
   ArduinoOTA.onStart([]() {
         // Deinitialize camera
