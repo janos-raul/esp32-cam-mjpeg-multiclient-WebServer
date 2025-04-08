@@ -25,7 +25,7 @@
 # arduino OTA for firmware upload
 # some performance tweaks
 # use of external wifi antena is highly recommended for the esp32cam board
-# set "Events Run On: core 0" and "Arduino Run On: core 0"
+# set "Events Run On: core 0" and "Arduino Run On: core 1"
 # set "Erase All Flash Before Sketch Upload: Disabled" to prevent SPIFFS deletion
 # used the board flash on gpio 4
 # used the board led on gpio 33
