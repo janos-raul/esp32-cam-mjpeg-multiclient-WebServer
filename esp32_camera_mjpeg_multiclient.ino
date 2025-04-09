@@ -83,6 +83,8 @@ TaskHandle_t camTaskHandle = NULL;
 TaskHandle_t streamTaskHandle = NULL;
 // frameSync semaphore is used to prevent streaming buffer as it is replaced with the next frame
 SemaphoreHandle_t frameSync = NULL;
+// camSync semaphore is used to sync access to the camera
+SemaphoreHandle_t camSync = NULL;
 // Queue stores currently connected clients to whom we are streaming
 QueueHandle_t streamingClients;
 // We will try to achieve 14 FPS frame rate
@@ -256,6 +258,9 @@ void mjpegCB(void* pvParameters) {
   // Creating frame synchronization semaphore and initializing it
   frameSync = xSemaphoreCreateBinary();
   xSemaphoreGive(frameSync);
+  // Creating camera synchronization semaphore and initializing it
+  camSync = xSemaphoreCreateBinary();
+  xSemaphoreGive(camSync);
 
   // Creating a queue to track all connected clients
   streamingClients = xQueueCreate(10, sizeof(WiFiClient*));
@@ -378,6 +383,8 @@ void camCB(void* pvParameters) {
   xLastWakeTime = xTaskGetTickCount();
   for (;;) {
     //  Grab a frame from the camera and query its size
+    // lock access to the camera until we've read the frame
+    xSemaphoreTake(camSync, portMAX_DELAY);
     cam.run();
     size_t s = cam.getSize();
     //  If frame size is more that we have previously allocated - request  125% of the current frame space
@@ -388,6 +395,7 @@ void camCB(void* pvParameters) {
     //  Copy current frame into local buffer
     char* b = (char*)cam.getfb();
     memcpy(fbs[ifb], b, s);
+    xSemaphoreGive(camSync);
     //  Let other tasks run and wait until the end of the current frame rate interval (if any time left)
     taskYIELD();
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
@@ -499,7 +507,6 @@ void streamCB(void* pvParameters) {
       xQueueReceive(streamingClients, (void*)&client, 0);
 
       //  Check if this client is still connected.
-
       if (!client->connected()) {
         //  delete this client reference if s/he has disconnected
         //  and don't put it back on the queue anymore. Bye!
@@ -512,8 +519,6 @@ void streamCB(void* pvParameters) {
         //  are serving this frame
         xSemaphoreTake(frameSync, portMAX_DELAY);
 
-        //client->write(HEADER, hdrLen);
-        //client->write(BOUNDARY, bdrLen);
         client->write(CTNTTYPE, cntLen);
         sprintf(buf, "%d\r\n\r\n", camSize);
         client->write(buf, strlen(buf));
@@ -550,9 +555,11 @@ void handleJPG(void) {
 
   if (!client.connected()) return;
   digitalWrite(FLASH_PIN, HIGH);  // flash on for capture jpg
+  xSemaphoreTake(camSync, portMAX_DELAY);
   cam.run();
   client.write(JHEADER, jhdLen);
   client.write((char*)cam.getfb(), cam.getSize());
+  xSemaphoreGive(camSync);
   digitalWrite(FLASH_PIN, LOW);
 }
 // ==== Handle invalid URL requests ============================================
