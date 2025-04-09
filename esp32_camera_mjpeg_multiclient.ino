@@ -322,7 +322,8 @@ void mjpegCB(void* pvParameters) {
     if (SPIFFS.exists("/ap_mode.flag")) {
       SPIFFS.remove("/ap_mode.flag");
     }
-    delay(1000);
+    // Deinitialize camera
+    camDeinit();
     ESP.restart();
   });
   server.on("/rebootAp", HTTP_POST, []() {
@@ -333,7 +334,8 @@ void mjpegCB(void* pvParameters) {
     }
     file.close();
     server.send(200, "application/json", "{\"message\":\"Rebooting into AP mode...\"}");
-    delay(1000);
+    // Deinitialize camera
+    camDeinit();
     ESP.restart();
   });
   // Serve static files
@@ -709,11 +711,20 @@ void loop() {
     digitalWrite(RED_LED_PIN, LOW);
   }
 
-  button_check();      // Check for button press and if pressed reboot into  AP mode
-  ArduinoOTA.handle();  // Check for OTA updates
-  ftpSrv.handleFTP();
+  button_check();         // Check for button press and if pressed reboot into  AP mode
+  ArduinoOTA.handle();    // Check for OTA updates
+  ftpSrv.handleFTP();  // Handle FTP server
   taskYIELD();
   vTaskDelay(pdMS_TO_TICKS(1));
+}
+
+void camDeinit() {
+  // Deinitialize camera
+  if (cam.deinit() != ESP_OK) {
+    Serial.println("Error deinitializing the camera!");
+  } else {
+    Serial.println("Deinitializing the camera!");
+  }
 }
 
 void button_check() {
@@ -725,7 +736,8 @@ void button_check() {
       return;
     }
     file.close();
-    delay(1000);
+    // Deinitialize camera
+    camDeinit();
     ESP.restart();
   }
 }
@@ -901,12 +913,8 @@ void ota_setup() {
   ArduinoOTA.setHostname(hostname.c_str());
   ArduinoOTA.setPassword("OTA-pasw");  // Set a strong password for OTA updates
   ArduinoOTA.onStart([]() {
-        // Deinitialize camera
-    if (cam.deinit() != ESP_OK) {
-      Serial.println("Error deinitializing the camera!");
-    }else {
-      Serial.println("Deinitializing the camera!");
-    }
+    // Deinitialize camera
+    camDeinit();
     String type;
     if (ArduinoOTA.getCommand() == U_FLASH) {
       type = "sketch";
