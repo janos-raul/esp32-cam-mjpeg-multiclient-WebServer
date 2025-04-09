@@ -10,7 +10,7 @@ const startStream = () => {
     view.src = streamUrl;
     viewContainer.style.display = 'flex';
     toggleStreamButton.innerHTML = 'Stop Video Stream';
-    getJpgButton.disabled = true; // Disable "Save Picture" button
+    // getJpgButton.disabled = true; // Disable "Save Picture" button
 };
 
 const stopStream = () => {
@@ -19,7 +19,7 @@ const stopStream = () => {
     view.src = '';
     viewContainer.style.display = 'none';
     toggleStreamButton.innerHTML = 'Start Video Stream';
-    getJpgButton.disabled = false; // Enable "Save Picture" button
+    // getJpgButton.disabled = false; // Enable "Save Picture" button
 };
 
 const getJpg = async () => {
