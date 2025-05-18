@@ -25,13 +25,13 @@
 # arduino OTA for firmware upload
 # some performance tweaks
 # use of external wifi antena is highly recommended for the esp32cam board
-# set "Events Run On: core 0" and "Arduino Run On: core 1"
+# set "Events Run On: core 0" and "Arduino Run On: core 0"
 # set "Erase All Flash Before Sketch Upload: Disabled" to prevent SPIFFS deletion
 # used the board flash on gpio 4
 # used the board led on gpio 33
 # added external led on gpio 2
 # added a button to enter AP mode and configure Wifi credentials which are then saved to SPIFFS and loaded on boot along with camera settings
-            (button is connected though a 220 ohm series rezistor from gpio 13 to 14)
+            (button is connected through a 220 ohm series rezistor from gpio 13 to 14)
 */
 
 // ESP32 has two cores: APPlication core and PROcess core (the one that runs ESP32 SDK stack)
@@ -59,6 +59,7 @@
 #include <SPIFFS.h>
 #include <SimpleFTPServer.h>
 #include "camera_pins.h"
+#include <Ticker.h>
 
 unsigned long lastTime = 0;
 unsigned long timerDelay = 50;
@@ -70,7 +71,7 @@ String password;
 String hostname;
 
 OV2640 cam;
-
+Ticker debounceTicker;
 WebServer server(80);
 FtpServer ftpSrv;
 
@@ -633,7 +634,7 @@ void setup() {
   //  config.frame_size = FRAMESIZE_QVGA;
   config.frame_size = FRAMESIZE_UXGA;
   config.jpeg_quality = 20;
-  config.fb_count = 1;
+  config.fb_count = 2;
 
   if (cam.init(config) != ESP_OK) {
     Serial.println("Error initializing the camera");
@@ -697,11 +698,10 @@ void setup() {
   ota_setup();
 }
 
-volatile bool buttonPressed = false;  // Flag to indicate button press
-
-// ISR to set the flag
+// ISR to start debounce timer
 void handleButtonInterrupt() {
-  buttonPressed = true;  // Set the flag when the interrupt triggers
+  // Start the debounceTicker
+  debounceTicker.attach_ms(50, button_check);  // check button state after 50ms debouncing time
 }
 
 void loop() {
@@ -717,8 +717,7 @@ void loop() {
     digitalWrite(LED_PIN, HIGH);
     digitalWrite(RED_LED_PIN, LOW);
   }
-
-  button_check();         // Check for button press and if pressed reboot into  AP mode
+     
   ArduinoOTA.handle();    // Check for OTA updates
   ftpSrv.handleFTP();  // Handle FTP server
   taskYIELD();
@@ -734,9 +733,12 @@ void camDeinit() {
   }
 }
 
+// Check for button press and if pressed reboot into  AP mode
 void button_check() {
-  if (buttonPressed) {
-    buttonPressed = false;  // Clear the flag
+
+  debounceTicker.detach();  // Stops the debounce ticker
+
+  if (digitalRead(BUTTON_PIN_INPUT) == LOW) {
     File file = SPIFFS.open("/ap_mode.flag", FILE_WRITE);
     if (!file) {
       Serial.println("Failed to create file");
@@ -849,11 +851,9 @@ void wifi_Connect() {
   WiFi.setHostname(hostname.c_str());
   WiFi.begin(ssid.c_str(), password.c_str());
   Serial.print("Connecting to WiFi");
-  buttonPressed = false;
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(F("."));
-    button_check();
   }
   ip = WiFi.localIP();
   Serial.println(F("WiFi connected"));
