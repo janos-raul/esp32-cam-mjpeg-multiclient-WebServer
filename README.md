@@ -1,5 +1,5 @@
 # ESP32 MJPEG Multiclient Streaming Server
-# Working example of this fork you can check out [here](http://sha256-mining.go.ro:50800).
+# Working example of this fork you can check out [here](http://sha256-mining.go.ro).
 
 This is a simple MJPEG streaming webserver implemented for AI-Thinker ESP32-CAM or ESP-EYE modules. 
 
