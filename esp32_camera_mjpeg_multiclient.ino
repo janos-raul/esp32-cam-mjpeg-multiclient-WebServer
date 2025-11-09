@@ -60,6 +60,7 @@
 #include <SimpleFTPServer.h>
 #include "camera_pins.h"
 #include <Ticker.h>
+#include <esp_task_wdt.h>
 
 unsigned long lastTime = 0;
 unsigned long timerDelay = 50;
@@ -253,6 +254,9 @@ void applySettings(const String& settings) {
 
 // ======== Server Connection Handler Task ==========================
 void mjpegCB(void* pvParameters) {
+  // Add this task to the watchdog
+  esp_task_wdt_add(NULL);
+
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(WSINTERVAL);
 
@@ -271,9 +275,9 @@ void mjpegCB(void* pvParameters) {
   xTaskCreatePinnedToCore(
     camCB,           // callback
     "cam",           // name
-    6 * 1024,        // stack size
+    8 * 1024,        // stack size (increased from 6KB to 8KB)
     NULL,            // parameters
-    6,               // priority
+    5,               // priority (reduced from 6 to 5)
     &camTaskHandle,  // RTOS task handle
     APP_CPU);        // core
 
@@ -281,9 +285,9 @@ void mjpegCB(void* pvParameters) {
   xTaskCreatePinnedToCore(
     streamCB,
     "strmCB",
-    6 * 1024,
+    8 * 1024,        // stack size (increased from 6KB to 8KB)
     NULL,               // parameters
-    6,                  // priority
+    5,                  // priority (reduced from 6 to 5)
     &streamTaskHandle,  // RTOS task handle
     PRO_CPU);           // core
 
@@ -361,6 +365,7 @@ void mjpegCB(void* pvParameters) {
     server.handleClient();
     //  After every server client handling request, we let other tasks run and then pause
     taskYIELD();
+    esp_task_wdt_reset();  // Reset watchdog timer
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
@@ -371,9 +376,12 @@ volatile char* camBuf;    // pointer to the current frame
 
 // ==== RTOS task to grab frames from the camera =========================
 void camCB(void* pvParameters) {
+  // Add this task to the watchdog
+  esp_task_wdt_add(NULL);
+
   TickType_t xLastWakeTime;
   //  A running interval associated with currently desired frame rate
-  const TickType_t xFrequency = pdMS_TO_TICKS(1000 / FPS);
+  TickType_t xFrequency;
   // Mutex for the critical section of swithing the active frames around
   portMUX_TYPE xSemaphore = portMUX_INITIALIZER_UNLOCKED;
   //  Pointers to the 2 frames, their respective sizes and index of the current frame
@@ -383,6 +391,13 @@ void camCB(void* pvParameters) {
   //=== loop() section  ===================
   xLastWakeTime = xTaskGetTickCount();
   for (;;) {
+    //  Reset watchdog at start of each iteration
+    esp_task_wdt_reset();
+
+    //  Update frequency based on current FPS setting
+    //  Ensure FPS is valid to prevent division by zero
+    int currentFPS = (FPS > 0 && FPS <= 60) ? FPS : 14;
+    xFrequency = pdMS_TO_TICKS(1000 / currentFPS);
     //  Grab a frame from the camera and query its size
     // lock access to the camera until we've read the frame
     xSemaphoreTake(camSync, portMAX_DELAY);
@@ -399,6 +414,7 @@ void camCB(void* pvParameters) {
     xSemaphoreGive(camSync);
     //  Let other tasks run and wait until the end of the current frame rate interval (if any time left)
     taskYIELD();
+    esp_task_wdt_reset();  // Reset watchdog timer
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
     //  Only switch frames around if no frame is currently being streamed to a client
     //  Wait on a semaphore until client operation completes
@@ -417,11 +433,12 @@ void camCB(void* pvParameters) {
     xTaskNotifyGive(streamTaskHandle);
     //  Immediately let other (streaming) tasks run
     taskYIELD();
-    //  If streaming task has suspended itself (no active clients to stream to)
-    //  there is no need to grab frames from the camera. We can save some juice
-    //  by suspedning the tasks
-    if (eTaskGetState(streamTaskHandle) == eSuspended) {
-      vTaskSuspend(NULL);  // passing NULL means "suspend yourself"
+    //  If streaming task has no clients, slow down frame capture
+    //  Check if there are any clients waiting
+    UBaseType_t clientCount = uxQueueMessagesWaiting(streamingClients);
+    if (clientCount == 0) {
+      //  No clients - slow down capture to save resources
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
   }
 }
@@ -484,19 +501,29 @@ void handleJPGSstream(void) {
 
 // ==== Actually stream content to all connected clients ========================
 void streamCB(void* pvParameters) {
+  // Add this task to the watchdog
+  esp_task_wdt_add(NULL);
+
   char buf[16];
   TickType_t xLastWakeTime;
   TickType_t xFrequency;
 
   //  Wait until the first frame is captured and there is something to send
-  //  to clients
-  ulTaskNotifyTake(pdTRUE,         /* Clear the notification value before exiting. */
-                   portMAX_DELAY); /* Block indefinitely. */
+  //  to clients (with timeout to allow watchdog reset)
+  while (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0) {
+    // No frame yet, reset watchdog and wait again
+    esp_task_wdt_reset();
+  }
   xLastWakeTime = xTaskGetTickCount();
 
   for (;;) {
+    //  Reset watchdog at start of each iteration
+    esp_task_wdt_reset();
+
     // Default assumption we are running according to the FPS
-    xFrequency = pdMS_TO_TICKS(1000 / FPS);
+    //  Ensure FPS is valid to prevent division by zero
+    int currentFPS = (FPS > 0 && FPS <= 60) ? FPS : 14;
+    xFrequency = pdMS_TO_TICKS(1000 / currentFPS);
     //  Only bother to send anything if there is someone watching
     UBaseType_t activeClients = uxQueueMessagesWaiting(streamingClients);
     if (activeClients) {
@@ -537,10 +564,12 @@ void streamCB(void* pvParameters) {
       }
     } else {
       //  Since there are no connected clients, there is no reason to waste battery running
-      vTaskSuspend(NULL);
+      //  Just delay instead of suspending to keep watchdog happy
+      vTaskDelay(pdMS_TO_TICKS(100));
     }
     //  Let other tasks run after serving every client
     taskYIELD();
+    esp_task_wdt_reset();  // Reset watchdog timer
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
@@ -581,6 +610,16 @@ void setup() {
   // Setup Serial connection:
   Serial.begin(115200);
   delay(1000);  // wait for a second to let Serial connect
+
+  // Deinitialize existing watchdog and reinitialize with longer timeout
+  esp_task_wdt_deinit();  // Remove existing watchdog
+  esp_task_wdt_config_t wdt_config = {
+    .timeout_ms = 30000,        // 30 second timeout
+    .idle_core_mask = 0,        // Don't watch idle tasks
+    .trigger_panic = true       // Panic on timeout
+  };
+  esp_task_wdt_init(&wdt_config);
+  Serial.println("Watchdog configured: 30 second timeout");
 
   // Initialize LED pins
   pinMode(FLASH_PIN, OUTPUT);
@@ -687,15 +726,22 @@ void setup() {
   xTaskCreatePinnedToCore(
     mjpegCB,
     "mjpeg",
-    4 * 1024,
+    6 * 1024,        // stack size (increased from 4KB to 6KB)
     NULL,
-    6,
+    4,               // priority (reduced from 6 to 4)
     &tMjpeg,
     PRO_CPU);
+
+  // Give tasks time to initialize
+  delay(500);
 
   ftpSrv.begin("user", "pasw");  //username, password for ftp.  set ports in ESP8266FtpServer.h  (default 21, 50009 for PASV)
   Serial.println("FTP Server Ready");
   ota_setup();
+
+  // Add main loop task to watchdog
+  esp_task_wdt_add(NULL);
+  Serial.println("Setup complete - all tasks running");
 }
 
 // ISR to start debounce timer
@@ -717,9 +763,13 @@ void loop() {
     digitalWrite(LED_PIN, HIGH);
     digitalWrite(RED_LED_PIN, LOW);
   }
-     
+
   ArduinoOTA.handle();    // Check for OTA updates
   ftpSrv.handleFTP();  // Handle FTP server
+
+  // Reset watchdog for main loop
+  esp_task_wdt_reset();
+
   taskYIELD();
   vTaskDelay(pdMS_TO_TICKS(1));
 }
