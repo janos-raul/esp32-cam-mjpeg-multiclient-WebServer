@@ -277,7 +277,7 @@ void mjpegCB(void* pvParameters) {
     "cam",           // name
     8 * 1024,        // stack size (increased from 6KB to 8KB)
     NULL,            // parameters
-    5,               // priority (reduced from 6 to 5)
+    2,               // priority (reduced from 6 to 2)
     &camTaskHandle,  // RTOS task handle
     APP_CPU);        // core
 
@@ -287,7 +287,7 @@ void mjpegCB(void* pvParameters) {
     "strmCB",
     8 * 1024,        // stack size (increased from 6KB to 8KB)
     NULL,               // parameters
-    5,                  // priority (reduced from 6 to 5)
+    3,                  // priority (reduced from 6 to 3)
     &streamTaskHandle,  // RTOS task handle
     PRO_CPU);           // core
 
@@ -726,9 +726,9 @@ void setup() {
   xTaskCreatePinnedToCore(
     mjpegCB,
     "mjpeg",
-    6 * 1024,        // stack size (increased from 4KB to 6KB)
+    8 * 1024,        // stack size (increased from 4KB to 8KB)
     NULL,
-    4,               // priority (reduced from 6 to 4)
+    2,               // priority (reduced from 6 to 2)
     &tMjpeg,
     PRO_CPU);
 
