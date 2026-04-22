@@ -10,23 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     mjpegStreamImg.src = streamUrl;
 
     // Set dimensions to scale responsively while maintaining aspect ratio
-    const aspectRatio = 640 / 480; // VGA aspect ratio (width / height)
+    const aspectRatio = 4 / 3; // 4:3 aspect ratio (standard camera)
 
-    // Adjust dynamically based on the container's width
-    function adjustStreamSize() {
-        const containerWidth = videoContainer.offsetWidth;
-        const calculatedHeight = containerWidth / aspectRatio; // Maintain aspect ratio
-
-        mjpegStreamImg.style.width = `${containerWidth}px`;
-        mjpegStreamImg.style.height = `${calculatedHeight}px`;
-        videoContainer.style.height = `${calculatedHeight}px`;
-    }
-
-    // Initial adjustment
-    adjustStreamSize();
-
-    // Re-adjust on window resize
-    window.addEventListener('resize', adjustStreamSize);
+    // Let CSS handle the sizing with object-fit: contain
+    // No need to manually set dimensions
 
     // Add the <img> element to the video container
     videoContainer.appendChild(mjpegStreamImg);
@@ -54,10 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
     style.innerHTML = `
         #videoContainer {
-            position: relative; /* Make container the positioning context */
-            max-width: 100%; /* Ensure container doesn't exceed screen width */
-            margin: 0 auto; /* Center the video container */
-	    max-width: 800px; /* Set a maximum width for desktop browsers */
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .overlay-text {
             position: absolute;
